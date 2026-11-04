@@ -99,7 +99,6 @@ class MarketEngine {
   sseClients: Set<express.Response> = new Set();
 
   constructor() {
-    this.seedUsers();
     const now = Date.now();
     this.currentRound = {
       roundId: 'R-1001',
@@ -119,55 +118,6 @@ class MarketEngine {
 
     // Authoritative 1-second interval loop
     setInterval(() => this.tick(), 1000);
-
-    // Periodic organic simulated bot bets to keep market lively between real human bets
-    setInterval(() => this.simulateBotBet(), 2500);
-  }
-
-  seedUsers() {
-    const bots: UserState[] = [
-      {
-        userId: 'user_whale',
-        username: 'WhaleDelta',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-        virtualBalance: 320000,
-        totalProfit: 120000,
-        totalRounds: 38,
-        winningRounds: 24,
-        isSimulated: true,
-      },
-      {
-        userId: 'user_quant',
-        username: 'QuantAlpha',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
-        virtualBalance: 240000,
-        totalProfit: 75000,
-        totalRounds: 32,
-        winningRounds: 21,
-        isSimulated: true,
-      },
-      {
-        userId: 'user_satoshi',
-        username: 'Satoshi99',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Satoshi99&backgroundColor=172554',
-        virtualBalance: 165000,
-        totalProfit: 35000,
-        totalRounds: 26,
-        winningRounds: 15,
-        isSimulated: true,
-      },
-      {
-        userId: 'user_venture',
-        username: 'VentureBear',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=VentureBear&backgroundColor=3b0764',
-        virtualBalance: 92000,
-        totalProfit: -8000,
-        totalRounds: 20,
-        winningRounds: 8,
-        isSimulated: true,
-      },
-    ];
-    bots.forEach(b => this.users.set(b.userId, b));
   }
 
   getOrCreateUser(userId: string, username?: string, avatar?: string): UserState {
@@ -399,21 +349,6 @@ class MarketEngine {
     });
 
     return { success: true };
-  }
-
-  simulateBotBet() {
-    if (this.currentRound.status !== 'active') return;
-    if (Math.random() < 0.4) {
-      const bots = Array.from(this.users.values()).filter(u => u.isSimulated);
-      if (bots.length === 0) return;
-      const bot = bots[Math.floor(Math.random() * bots.length)];
-      const side: 'YES' | 'NO' = Math.random() > 0.48 ? 'YES' : 'NO';
-      const denominations = [500, 1000, 2500, 5000];
-      const stake = denominations[Math.floor(Math.random() * denominations.length)];
-      if (bot.virtualBalance >= stake) {
-        this.placeStake(bot.userId, side, stake);
-      }
-    }
   }
 
   getPublicRoundData() {

@@ -14,7 +14,7 @@ const STORAGE_KEYS = {
 export const AVATARS = [
   'https://api.dicebear.com/7.x/bottts/svg?seed=AlphaTrader&backgroundColor=0f172a',
   'https://api.dicebear.com/7.x/bottts/svg?seed=CryptoWhale&backgroundColor=1e293b',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=TraderAlpha&backgroundColor=022c22',
   'https://api.dicebear.com/7.x/bottts/svg?seed=Satoshi99&backgroundColor=311042',
   'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaHedger&backgroundColor=1e1b4b',
   'https://api.dicebear.com/7.x/bottts/svg?seed=NovaCap&backgroundColor=172554',
@@ -34,76 +34,6 @@ export const INITIAL_MAIN_USER: User = {
 
 export const INITIAL_TEST_USERS: User[] = [
   INITIAL_MAIN_USER,
-  {
-    userId: 'user_whale',
-    username: 'WhaleDelta',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-    virtualBalance: 342000,
-    totalProfit: 142000,
-    totalRounds: 48,
-    winningRounds: 31,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_quant',
-    username: 'QuantAlpha',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
-    virtualBalance: 285500,
-    totalProfit: 95500,
-    totalRounds: 42,
-    winningRounds: 27,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_macro',
-    username: 'MacroPulse',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MacroPulse&backgroundColor=311042',
-    virtualBalance: 210000,
-    totalProfit: 62000,
-    totalRounds: 35,
-    winningRounds: 21,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_arbitrage',
-    username: 'ArbitrageBot',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ArbitrageBot&backgroundColor=1e1b4b',
-    virtualBalance: 178000,
-    totalProfit: 48000,
-    totalRounds: 39,
-    winningRounds: 22,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_satoshi',
-    username: 'Satoshi99',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Satoshi99&backgroundColor=172554',
-    virtualBalance: 145000,
-    totalProfit: 25000,
-    totalRounds: 28,
-    winningRounds: 16,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_neon',
-    username: 'NeonScalper',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NeonScalper&backgroundColor=064e3b',
-    virtualBalance: 88000,
-    totalProfit: -12000,
-    totalRounds: 26,
-    winningRounds: 11,
-    isSimulated: true,
-  },
-  {
-    userId: 'user_bear',
-    username: 'VentureBear',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=VentureBear&backgroundColor=3b0764',
-    virtualBalance: 65000,
-    totalProfit: -35000,
-    totalRounds: 30,
-    winningRounds: 10,
-    isSimulated: true,
-  },
 ];
 
 // Helper to seed historical rounds so activity & leaderboards feel rich and live
@@ -180,30 +110,6 @@ export function getInitialSeedData(): {
   };
 
   const initialParticipations: Participation[] = [
-    {
-      participationId: 'p-1',
-      userId: 'user_whale',
-      roundId: 'R-1048',
-      selectedOption: 'YES',
-      stake: 25000,
-      payout: 0,
-      result: 'PENDING',
-      timestamp: now - 30000,
-      username: 'WhaleDelta',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-    },
-    {
-      participationId: 'p-2',
-      userId: 'user_quant',
-      roundId: 'R-1048',
-      selectedOption: 'NO',
-      stake: 18000,
-      payout: 0,
-      result: 'PENDING',
-      timestamp: now - 15000,
-      username: 'QuantAlpha',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
-    },
     // Past user participations
     {
       participationId: 'p-past-1',

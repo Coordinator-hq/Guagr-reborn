@@ -108,15 +108,6 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
   },
 ];
 
-const BOT_TRADERS = [
-  { username: 'WhaleDelta', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b' },
-  { username: 'QuantAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22' },
-  { username: 'SatoshiPulse', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SatoshiPulse&backgroundColor=451a03' },
-  { username: 'LagosBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554' },
-  { username: 'NaijaAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaAlpha&backgroundColor=3b0764' },
-  { username: 'DeltaKano', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a' },
-];
-
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUserId, setCurrentUserId] = useState<string>(() => getOrCreateDeviceId());
   
@@ -148,9 +139,9 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     startTime: initialClock.startTime,
     endTime: initialClock.endTime,
     status: 'active',
-    yesTotal: 42000,
-    noTotal: 36000,
-    totalPot: 78000,
+    yesTotal: 0,
+    noTotal: 0,
+    totalPot: 0,
     winningOption: null,
     rolloverAmount: 0,
   });
@@ -162,24 +153,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     transactions: [],
   });
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([
-    {
-      id: 'feed-init-1',
-      username: 'WhaleDelta',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-      option: 'YES',
-      stake: 25000,
-      timestamp: Date.now() - 15000,
-    },
-    {
-      id: 'feed-init-2',
-      username: 'LagosBull',
-      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554',
-      option: 'NO',
-      stake: 20000,
-      timestamp: Date.now() - 32000,
-    },
-  ]);
+  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([]);
   const [resolutionSummary, setResolutionSummary] = useState<ResolutionSummary | null>(null);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(() => {
     return Math.max(0, Math.floor((initialClock.endTime - Date.now()) / 1000));
@@ -477,45 +451,6 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(timer);
   }, [currentRound, userCurrentParticipations, notifications]);
 
-  // Organic simulated background bets for dynamic orderbook on Vercel
-  useEffect(() => {
-    const botInterval = setInterval(() => {
-      if (isServerAvailable.current) return;
-      if (timeRemainingSeconds <= 6) return; // Freeze bets in final seconds
-
-      const randomBot = BOT_TRADERS[Math.floor(Math.random() * BOT_TRADERS.length)];
-      const randomOption: MarketOption = Math.random() > 0.48 ? 'YES' : 'NO';
-      const stakeAmounts = [1000, 2500, 5000, 10000, 15000];
-      const botStake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
-      const now = Date.now();
-
-      setCurrentRound(prev => {
-        const yesTotal = randomOption === 'YES' ? prev.yesTotal + botStake : prev.yesTotal;
-        const noTotal = randomOption === 'NO' ? prev.noTotal + botStake : prev.noTotal;
-        return {
-          ...prev,
-          yesTotal,
-          noTotal,
-          totalPot: yesTotal + noTotal,
-        };
-      });
-
-      setLiveFeed(prev => [
-        {
-          id: `feed-bot-${now}`,
-          username: randomBot.username,
-          avatar: randomBot.avatar,
-          option: randomOption,
-          stake: botStake,
-          timestamp: now,
-        },
-        ...prev.slice(0, 19),
-      ]);
-    }, 3800);
-
-    return () => clearInterval(botInterval);
-  }, [timeRemainingSeconds]);
-
   // User stakes — Supports MULTIPLE stakes in the active 90-second round!
   const placeStake = async (option: MarketOption, stakeAmount: number): Promise<{ success: boolean; error?: string }> => {
     if (stakeAmount <= 0) {
@@ -735,59 +670,50 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const hasUserParticipated = userCurrentParticipations.length > 0;
 
   const getLeaderboard = (_timeframe: LeaderboardTimeframe): LeaderboardEntry[] => {
-    if (leaderboard.length > 0) return leaderboard;
-    // Default simulated leaderboard
-    const base: LeaderboardEntry[] = [
-      {
-        rank: 1,
-        userId: 'user_whale',
-        username: 'WhaleDelta',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-        virtualBalance: 320000,
-        totalProfit: 120000,
-        winningRounds: 24,
-        totalRounds: 38,
-        winRate: 63,
-        isCurrentUser: false,
-      },
-      {
-        rank: 2,
-        userId: 'user_quant',
-        username: 'QuantAlpha',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
-        virtualBalance: 240000,
-        totalProfit: 75000,
-        winningRounds: 21,
-        totalRounds: 32,
-        winRate: 65,
-        isCurrentUser: false,
-      },
-      {
-        rank: 3,
-        userId: currentUser.userId,
-        username: currentUser.username,
-        avatar: currentUser.avatar,
-        virtualBalance: currentUser.virtualBalance,
-        totalProfit: currentUser.totalProfit,
-        winningRounds: currentUser.winningRounds,
-        totalRounds: currentUser.totalRounds,
-        winRate: currentUser.totalRounds > 0 ? Math.round((currentUser.winningRounds / currentUser.totalRounds) * 100) : 0,
-        isCurrentUser: true,
-      },
-      {
-        rank: 4,
-        userId: 'user_lagos',
-        username: 'LagosBull',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554',
-        virtualBalance: 175000,
-        totalProfit: 45000,
-        winningRounds: 18,
-        totalRounds: 29,
-        winRate: 62,
-        isCurrentUser: false,
-      },
-    ];
-    return base.sort((a, b) => b.totalProfit - a.totalProfit).map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+    if (leaderboard.length > 0) {
+      return leaderboard.filter(e => !e.userId.startsWith('bot_') && !e.userId.includes('whale') && !e.userId.includes('quant'));
+    }
+
+    // Only real users on the platform
+    const realUsersMap = new Map<string, LeaderboardEntry>();
+
+    // Current player's actual performance
+    realUsersMap.set(currentUser.userId, {
+      rank: 1,
+      userId: currentUser.userId,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+      virtualBalance: currentUser.virtualBalance,
+      totalProfit: currentUser.totalProfit,
+      winningRounds: currentUser.winningRounds,
+      totalRounds: currentUser.totalRounds,
+      winRate: currentUser.totalRounds > 0 ? Math.round((currentUser.winningRounds / currentUser.totalRounds) * 100) : 0,
+      isCurrentUser: true,
+    });
+
+    // Add any real peer players
+    allUsers.forEach(u => {
+      if (!u.isSimulated && !u.userId.startsWith('user_whale') && !u.userId.startsWith('user_quant') && !u.userId.startsWith('user_lagos')) {
+        if (!realUsersMap.has(u.userId)) {
+          realUsersMap.set(u.userId, {
+            rank: 1,
+            userId: u.userId,
+            username: u.username,
+            avatar: u.avatar,
+            virtualBalance: u.virtualBalance,
+            totalProfit: u.totalProfit,
+            winningRounds: u.winningRounds,
+            totalRounds: u.totalRounds,
+            winRate: u.totalRounds > 0 ? Math.round((u.winningRounds / u.totalRounds) * 100) : 0,
+            isCurrentUser: u.userId === currentUser.userId,
+          });
+        }
+      }
+    });
+
+    return Array.from(realUsersMap.values())
+      .sort((a, b) => b.totalProfit - a.totalProfit)
+      .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
   };
 
   const getUserHistory = () => {

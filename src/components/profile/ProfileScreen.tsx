@@ -18,7 +18,7 @@ import {
 const PRESET_AVATARS = [
   'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaTrader&backgroundColor=0284c7',
   'https://api.dicebear.com/7.x/bottts/svg?seed=ApexWhale&backgroundColor=0f172a',
-  'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=16a34a',
+  'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaCap&backgroundColor=16a34a',
   'https://api.dicebear.com/7.x/bottts/svg?seed=CryptoSiren&backgroundColor=9333ea',
   'https://api.dicebear.com/7.x/bottts/svg?seed=AlphaStaker&backgroundColor=ea580c',
   'https://api.dicebear.com/7.x/bottts/svg?seed=CyberNinja&backgroundColor=e11d48',
