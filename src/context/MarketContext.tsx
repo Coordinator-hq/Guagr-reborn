@@ -115,6 +115,12 @@ const BOT_TRADERS = [
   { username: 'LagosTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554' },
   { username: 'NaijaBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaBull&backgroundColor=3b0764' },
   { username: 'DeltaKano', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a' },
+  { username: 'ApexScalper', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ApexScalper&backgroundColor=0f172a' },
+  { username: 'EkoWhale', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=EkoWhale&backgroundColor=0369a1' },
+  { username: 'AbujaTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AbujaTrader&backgroundColor=047857' },
+  { username: 'SigmaHedger', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SigmaHedger&backgroundColor=6d28d9' },
+  { username: 'ZariaAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ZariaAlpha&backgroundColor=b91c1c' },
+  { username: 'IbadanBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=IbadanBull&backgroundColor=c2410c' },
 ];
 
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -148,12 +154,17 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     startTime: initialClock.startTime,
     endTime: initialClock.endTime,
     status: 'active',
-    yesTotal: 0,
-    noTotal: 0,
-    totalPot: 0,
+    yesTotal: 18000,
+    noTotal: 22000,
+    totalPot: 40000,
     winningOption: null,
     rolloverAmount: 0,
   });
+
+  const currentRoundRef = useRef<Market>(currentRound);
+  useEffect(() => {
+    currentRoundRef.current = currentRound;
+  }, [currentRound]);
 
   const [pastRounds, setPastRounds] = useState<Market[]>([]);
   const [userCurrentParticipations, setUserCurrentParticipations] = useState<Participation[]>([]);
@@ -162,7 +173,24 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     transactions: [],
   });
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([]);
+  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([
+    {
+      id: 'feed-init-1',
+      username: 'WhaleDelta',
+      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
+      option: 'YES',
+      stake: 18000,
+      timestamp: Date.now() - 12000,
+    },
+    {
+      id: 'feed-init-2',
+      username: 'LagosTrader',
+      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554',
+      option: 'NO',
+      stake: 22000,
+      timestamp: Date.now() - 25000,
+    },
+  ]);
   const [resolutionSummary, setResolutionSummary] = useState<ResolutionSummary | null>(null);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(() => {
     return Math.max(0, Math.floor((initialClock.endTime - Date.now()) / 1000));
@@ -460,15 +488,19 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(timer);
   }, [currentRound, userCurrentParticipations, notifications]);
 
-  // Organic simulated background bets for dynamic orderbook on Vercel
+  // Organic simulated background bets for dynamic orderbook on Vercel & Standalone
   useEffect(() => {
     const botInterval = setInterval(() => {
       if (isServerAvailable.current) return;
-      if (timeRemainingSeconds <= 5) return; // Freeze bets in final 5 seconds
+      const round = currentRoundRef.current;
+      if (!round || round.status !== 'active') return;
+
+      const remainingSecs = Math.max(0, Math.floor((round.endTime - Date.now()) / 1000));
+      if (remainingSecs <= 4) return; // Freeze bets in final 4 seconds before resolution
 
       const randomBot = BOT_TRADERS[Math.floor(Math.random() * BOT_TRADERS.length)];
       const randomOption: MarketOption = Math.random() > 0.48 ? 'YES' : 'NO';
-      const stakeAmounts = [1000, 2500, 5000, 10000, 15000];
+      const stakeAmounts = [1000, 2500, 5000, 10000, 15000, 25000];
       const botStake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
       const now = Date.now();
 
@@ -485,7 +517,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setLiveFeed(prev => [
         {
-          id: `feed-bot-${now}`,
+          id: `feed-bot-${now}-${Math.random().toString(36).substring(2, 6)}`,
           username: randomBot.username,
           avatar: randomBot.avatar,
           option: randomOption,
@@ -494,10 +526,10 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         },
         ...prev.slice(0, 19),
       ]);
-    }, 3200);
+    }, 2200);
 
     return () => clearInterval(botInterval);
-  }, [timeRemainingSeconds]);
+  }, []);
 
   // User stakes — Supports MULTIPLE stakes in the active 90-second round!
   const placeStake = async (option: MarketOption, stakeAmount: number): Promise<{ success: boolean; error?: string }> => {

@@ -121,7 +121,7 @@ class MarketEngine {
     setInterval(() => this.tick(), 1000);
 
     // Organic bot bets to keep gameplay dynamic & lively
-    setInterval(() => this.simulateBotBet(), 2800);
+    setInterval(() => this.simulateBotBet(), 2000);
   }
 
   seedUsers() {
@@ -184,6 +184,66 @@ class MarketEngine {
         totalProfit: 8000,
         totalRounds: 18,
         winningRounds: 10,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_apex_scalper',
+        username: 'ApexScalper',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ApexScalper&backgroundColor=0f172a',
+        virtualBalance: 290000,
+        totalProfit: 98000,
+        totalRounds: 35,
+        winningRounds: 22,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_eko_whale',
+        username: 'EkoWhale',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=EkoWhale&backgroundColor=0369a1',
+        virtualBalance: 215000,
+        totalProfit: 68000,
+        totalRounds: 30,
+        winningRounds: 19,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_abuja_trader',
+        username: 'AbujaTrader',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AbujaTrader&backgroundColor=047857',
+        virtualBalance: 155000,
+        totalProfit: 31000,
+        totalRounds: 25,
+        winningRounds: 15,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_sigma_hedger',
+        username: 'SigmaHedger',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SigmaHedger&backgroundColor=6d28d9',
+        virtualBalance: 130000,
+        totalProfit: 18000,
+        totalRounds: 20,
+        winningRounds: 12,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_zaria_alpha',
+        username: 'ZariaAlpha',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ZariaAlpha&backgroundColor=b91c1c',
+        virtualBalance: 95000,
+        totalProfit: -5000,
+        totalRounds: 16,
+        winningRounds: 7,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_ibadan_bull',
+        username: 'IbadanBull',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=IbadanBull&backgroundColor=c2410c',
+        virtualBalance: 88000,
+        totalProfit: -12000,
+        totalRounds: 15,
+        winningRounds: 6,
         isSimulated: true,
       },
     ];
