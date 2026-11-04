@@ -9,7 +9,8 @@
     "start": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "sync": "git add -A && git commit -m 'Sync updates from AI Studio' --allow-empty && git push origin main"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
