@@ -176,6 +176,11 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [pastRounds, setPastRounds] = useState<Market[]>([]);
   const [userCurrentParticipations, setUserCurrentParticipations] = useState<Participation[]>([]);
+  const userCurrentParticipationsRef = useRef<Participation[]>(userCurrentParticipations);
+  useEffect(() => {
+    userCurrentParticipationsRef.current = userCurrentParticipations;
+  }, [userCurrentParticipations]);
+
   const [userHistory, setUserHistory] = useState<{ participations: Participation[]; transactions: Transaction[] }>({
     participations: [],
     transactions: [],
@@ -216,6 +221,11 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return INITIAL_NOTIFICATIONS;
   });
 
+  const notificationsRef = useRef<AppNotification[]>(notifications);
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
+
   // Track if backend Express server is accessible
   const isServerAvailable = useRef<boolean>(false);
 
@@ -232,7 +242,8 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch(`/api/market/state?userId=${currentUserId}&username=${encodeURIComponent(currentUser.username)}&avatar=${encodeURIComponent(currentUser.avatar)}`);
-      if (!res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
         isServerAvailable.current = false;
         return;
       }
@@ -240,21 +251,29 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isServerAvailable.current = true;
 
       if (data.round) {
-        setCurrentRound({
-          roundId: data.round.roundId,
-          roundNumber: data.round.roundNumber,
-          startTime: data.round.startTime,
-          endTime: data.round.endTime,
-          status: data.round.status,
-          yesTotal: data.round.yesTotal,
-          noTotal: data.round.noTotal,
-          totalPot: data.round.totalPot,
-          winningOption: data.round.winningOption || null,
-          rolloverAmount: data.round.rolloverAmount || 0,
+        setCurrentRound(prev => {
+          if (
+            prev.roundId === data.round.roundId &&
+            prev.yesTotal === data.round.yesTotal &&
+            prev.noTotal === data.round.noTotal &&
+            prev.status === data.round.status &&
+            Math.abs(prev.endTime - data.round.endTime) < 2000
+          ) {
+            return prev;
+          }
+          return {
+            roundId: data.round.roundId,
+            roundNumber: data.round.roundNumber,
+            startTime: data.round.startTime,
+            endTime: data.round.endTime,
+            status: data.round.status,
+            yesTotal: data.round.yesTotal,
+            noTotal: data.round.noTotal,
+            totalPot: data.round.totalPot,
+            winningOption: data.round.winningOption || null,
+            rolloverAmount: data.round.rolloverAmount || 0,
+          };
         });
-
-        const diff = Math.max(0, Math.floor((data.round.endTime - Date.now()) / 1000));
-        setTimeRemainingSeconds(diff);
       }
 
       if (data.user) {
@@ -374,31 +393,28 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Synchronized Engine Tick & Round Resolution Loop (Handles Vercel / Offline seamlessly)
   useEffect(() => {
     const timer = setInterval(() => {
+      const round = currentRoundRef.current;
+      if (!round) return;
+
       const now = Date.now();
+      const remaining = Math.max(0, Math.floor((round.endTime - now) / 1000));
 
-      if (isServerAvailable.current) {
-        // When Express server is available, track server round's endTime
-        const diff = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
-        setTimeRemainingSeconds(diff);
-        return;
-      }
-
-      // Standalone mode (Vercel / Offline)
-      const remaining = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
       setTimeRemainingSeconds(remaining);
 
       // Trigger round resolution when current round's timer expires
-      if (remaining <= 0 && currentRound.status === 'active') {
-        const prevRound = currentRound;
+      if (!isServerAvailable.current && remaining <= 0 && round.status === 'active') {
+        const prevRound = round;
         let winningOption: MarketOption | 'TIE' = 'TIE';
         if (prevRound.yesTotal > prevRound.noTotal) winningOption = 'YES';
         else if (prevRound.noTotal > prevRound.yesTotal) winningOption = 'NO';
 
+        const userParts = userCurrentParticipationsRef.current;
+
         // Calculate payout if user participated
-        const userWinningStake = userCurrentParticipations
+        const userWinningStake = userParts
           .filter(p => p.selectedOption === winningOption)
           .reduce((sum, p) => sum + p.stake, 0);
-        const userTotalStaked = userCurrentParticipations
+        const userTotalStaked = userParts
           .reduce((sum, p) => sum + p.stake, 0);
         const winningSideTotal = winningOption === 'YES' ? prevRound.yesTotal : prevRound.noTotal;
 
@@ -439,7 +455,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             yesTotal: prevRound.yesTotal,
             noTotal: prevRound.noTotal,
             totalPot: prevRound.totalPot,
-            userParticipations: userCurrentParticipations.map(p => ({
+            userParticipations: userParts.map(p => ({
               ...p,
               result: winningOption === 'TIE' ? 'ROLLOVER' : p.selectedOption === winningOption ? 'WIN' : 'LOSS',
               payout: p.selectedOption === winningOption ? userPayout : 0,
@@ -461,7 +477,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             type: userPayout > 0 ? 'WIN' : 'LOSS',
             roundId: prevRound.roundId,
           };
-          saveNotifications([newNotif, ...notifications.slice(0, 29)]);
+          saveNotifications([newNotif, ...notificationsRef.current.slice(0, 29)]);
         }
 
         // Reset user stakes for new round
@@ -494,7 +510,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentRound, userCurrentParticipations, notifications]);
+  }, []);
 
   // Organic simulated background bets for dynamic orderbook on Vercel & Standalone (FAST: 1000ms)
   useEffect(() => {
