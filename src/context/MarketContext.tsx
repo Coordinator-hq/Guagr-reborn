@@ -377,19 +377,18 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const now = Date.now();
 
       if (isServerAvailable.current) {
-        // When server is running, track server's end time
+        // When Express server is available, track server round's endTime
         const diff = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
         setTimeRemainingSeconds(diff);
         return;
       }
 
-      // Standalone Clock Sync (Vercel deployment)
-      const clock = getClockRound(now);
-      const remaining = Math.max(0, Math.floor((clock.endTime - now) / 1000));
+      // Standalone mode (Vercel / Offline)
+      const remaining = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
       setTimeRemainingSeconds(remaining);
 
-      // Check for round rollover / transition
-      if (currentRound.roundId !== clock.roundId && remaining > 0) {
+      // Trigger round resolution when current round's timer expires
+      if (remaining <= 0 && currentRound.status === 'active') {
         const prevRound = currentRound;
         let winningOption: MarketOption | 'TIE' = 'TIE';
         if (prevRound.yesTotal > prevRound.noTotal) winningOption = 'YES';
@@ -468,16 +467,17 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Reset user stakes for new round
         setUserCurrentParticipations([]);
 
-        // New round seed pot
+        // Create new 90-second round starting now
+        const nextRoundNumber = prevRound.roundNumber + 1;
         const seedYes = 24000 + Math.floor(Math.random() * 20000);
         const seedNo = 22000 + Math.floor(Math.random() * 22000);
         const rollover = winningOption === 'TIE' ? prevRound.totalPot : 0;
 
         setCurrentRound({
-          roundId: clock.roundId,
-          roundNumber: clock.roundNumber,
-          startTime: clock.startTime,
-          endTime: clock.endTime,
+          roundId: `R-${nextRoundNumber}`,
+          roundNumber: nextRoundNumber,
+          startTime: now,
+          endTime: now + 90000,
           status: 'active',
           yesTotal: seedYes,
           noTotal: seedNo,
