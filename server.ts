@@ -425,6 +425,12 @@ class MarketEngine {
       return { success: false, error: 'Insufficient virtual credits.' };
     }
 
+    // Lock position to initial chosen option for the active round
+    const existingParts = this.participations.filter(p => p.roundId === this.currentRound.roundId && p.userId === userId);
+    if (existingParts.length > 0 && existingParts[0].selectedOption !== option) {
+      return { success: false, error: `Position locked to ${existingParts[0].selectedOption} for Round #${this.currentRound.roundNumber}.` };
+    }
+
     const now = Date.now();
     user.virtualBalance -= stakeAmount;
 

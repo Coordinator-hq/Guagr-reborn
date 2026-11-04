@@ -550,13 +550,22 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(botInterval);
   }, []);
 
-  // User stakes — Supports MULTIPLE stakes in the active 90-second round!
+  // User stakes — Supports MULTIPLE stakes on committed option in active 90-second round!
   const placeStake = async (option: MarketOption, stakeAmount: number): Promise<{ success: boolean; error?: string }> => {
     if (stakeAmount <= 0) {
       return { success: false, error: 'Stake must be greater than ₦0.' };
     }
     if (stakeAmount > currentUser.virtualBalance) {
       return { success: false, error: 'Insufficient virtual credits.' };
+    }
+
+    // Check if user has already committed to an option in the current round
+    const existingParticipation = userCurrentParticipations.find(p => p.roundId === currentRound.roundId);
+    if (existingParticipation && existingParticipation.selectedOption !== option) {
+      return {
+        success: false,
+        error: `Your position is locked to ${existingParticipation.selectedOption} for Round #${currentRound.roundNumber}.`,
+      };
     }
 
     // Attempt Server API if available

@@ -180,6 +180,21 @@ export const MarketScreen: React.FC = () => {
     }
   };
 
+  // Option locked once the user takes a position in the current round
+  const lockedOption: MarketOption | null =
+    userYesStake > 0
+      ? 'YES'
+      : userNoStake > 0
+      ? 'NO'
+      : null;
+
+  // Auto-sync selectedOption if locked
+  React.useEffect(() => {
+    if (lockedOption) {
+      setSelectedOption(lockedOption);
+    }
+  }, [lockedOption]);
+
   const isLowTime = timeRemainingSeconds <= 15;
 
   return (
@@ -210,31 +225,59 @@ export const MarketScreen: React.FC = () => {
           {/* Buy YES Box */}
           <button
             onClick={() => {
+              if (lockedOption === 'NO') {
+                setErrorMessage(`Your position is locked to NO for Round #${currentRound?.roundNumber}.`);
+                return;
+              }
               setSelectedOption('YES');
               setErrorMessage(null);
             }}
+            disabled={lockedOption === 'NO'}
             className={`rounded-xl border py-3.5 px-4 text-center font-bold text-sm transition-all ${
               selectedOption === 'YES'
                 ? 'bg-[#0062ff] text-white border-[#0062ff] shadow-md shadow-blue-500/20 scale-[1.02]'
+                : lockedOption === 'NO'
+                ? 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
                 : 'bg-[#f0f7ff] border-[#cce4ff] text-[#0062ff] hover:bg-[#e5f2ff]'
             }`}
           >
-            Buy Yes
+            <div className="flex items-center justify-center gap-1.5">
+              <span>Buy Yes</span>
+              {lockedOption === 'YES' && (
+                <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                  LOCKED
+                </span>
+              )}
+            </div>
           </button>
 
           {/* Buy NO Box */}
           <button
             onClick={() => {
+              if (lockedOption === 'YES') {
+                setErrorMessage(`Your position is locked to YES for Round #${currentRound?.roundNumber}.`);
+                return;
+              }
               setSelectedOption('NO');
               setErrorMessage(null);
             }}
+            disabled={lockedOption === 'YES'}
             className={`rounded-xl border py-3.5 px-4 text-center font-bold text-sm transition-all ${
               selectedOption === 'NO'
                 ? 'bg-[#e11d48] text-white border-[#e11d48] shadow-md shadow-rose-500/20 scale-[1.02]'
+                : lockedOption === 'YES'
+                ? 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed opacity-50'
                 : 'bg-[#fff1f3] border-[#ffd2d8] text-[#e11d48] hover:bg-[#ffe4e8]'
             }`}
           >
-            Buy No
+            <div className="flex items-center justify-center gap-1.5">
+              <span>Buy No</span>
+              {lockedOption === 'NO' && (
+                <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                  LOCKED
+                </span>
+              )}
+            </div>
           </button>
         </div>
 
@@ -339,7 +382,7 @@ export const MarketScreen: React.FC = () => {
                 <Plus className="h-3.5 w-3.5" /> Stake More in this Round
               </span>
               <span className="text-slate-400 font-normal">
-                Select side & choose amount
+                {lockedOption ? `Position locked to ${lockedOption}` : 'Select side & choose amount'}
               </span>
             </div>
           )}
