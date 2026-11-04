@@ -108,19 +108,27 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
   },
 ];
 
-const BOT_TRADERS = [
-  { username: 'WhaleDelta', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b' },
-  { username: 'QuantAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22' },
-  { username: 'SatoshiPulse', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SatoshiPulse&backgroundColor=451a03' },
-  { username: 'LagosTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554' },
-  { username: 'NaijaBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaBull&backgroundColor=3b0764' },
-  { username: 'DeltaKano', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a' },
-  { username: 'ApexScalper', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ApexScalper&backgroundColor=0f172a' },
-  { username: 'EkoWhale', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=EkoWhale&backgroundColor=0369a1' },
-  { username: 'AbujaTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AbujaTrader&backgroundColor=047857' },
-  { username: 'SigmaHedger', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SigmaHedger&backgroundColor=6d28d9' },
-  { username: 'ZariaAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ZariaAlpha&backgroundColor=b91c1c' },
-  { username: 'IbadanBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=IbadanBull&backgroundColor=c2410c' },
+export const BOT_TRADERS = [
+  { userId: 'bot_whale_delta', username: 'WhaleDelta', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b', totalProfit: 145000, virtualBalance: 345000, totalRounds: 38, winningRounds: 25 },
+  { userId: 'bot_apex_scalper', username: 'ApexScalper', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ApexScalper&backgroundColor=0f172a', totalProfit: 118000, virtualBalance: 318000, totalRounds: 36, winningRounds: 23 },
+  { userId: 'bot_quant_alpha', username: 'QuantAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22', totalProfit: 95000, virtualBalance: 295000, totalRounds: 32, winningRounds: 21 },
+  { userId: 'bot_eko_whale', username: 'EkoWhale', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=EkoWhale&backgroundColor=0369a1', totalProfit: 78000, virtualBalance: 278000, totalRounds: 30, winningRounds: 19 },
+  { userId: 'bot_lagos_trader', username: 'LagosTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554', totalProfit: 62000, virtualBalance: 262000, totalRounds: 28, winningRounds: 18 },
+  { userId: 'bot_satoshi_pulse', username: 'SatoshiPulse', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SatoshiPulse&backgroundColor=451a03', totalProfit: 48000, virtualBalance: 248000, totalRounds: 26, winningRounds: 16 },
+  { userId: 'bot_abuja_trader', username: 'AbujaTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AbujaTrader&backgroundColor=047857', totalProfit: 36000, virtualBalance: 236000, totalRounds: 25, winningRounds: 15 },
+  { userId: 'bot_naija_bull', username: 'NaijaBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaBull&backgroundColor=3b0764', totalProfit: 28000, virtualBalance: 228000, totalRounds: 22, winningRounds: 13 },
+  { userId: 'bot_sigma_hedger', username: 'SigmaHedger', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SigmaHedger&backgroundColor=6d28d9', totalProfit: 21000, virtualBalance: 221000, totalRounds: 20, winningRounds: 12 },
+  { userId: 'bot_kano_delta', username: 'DeltaKano', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a', totalProfit: 15000, virtualBalance: 215000, totalRounds: 18, winningRounds: 10 },
+  { userId: 'bot_ph_whale', username: 'PortHarcourtWhale', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=PortHarcourtWhale&backgroundColor=0e7490', totalProfit: 11000, virtualBalance: 211000, totalRounds: 17, winningRounds: 9 },
+  { userId: 'bot_calabar_alpha', username: 'CalabarAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CalabarAlpha&backgroundColor=15803d', totalProfit: 6000, virtualBalance: 206000, totalRounds: 16, winningRounds: 8 },
+  { userId: 'bot_enugu_scalper', username: 'EnuguScalper', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=EnuguScalper&backgroundColor=a16207', totalProfit: 2000, virtualBalance: 202000, totalRounds: 14, winningRounds: 7 },
+  { userId: 'bot_benin_pulse', username: 'BeninPulse', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=BeninPulse&backgroundColor=431407', totalProfit: -3000, virtualBalance: 197000, totalRounds: 15, winningRounds: 6 },
+  { userId: 'bot_zaria_alpha', username: 'ZariaAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=ZariaAlpha&backgroundColor=b91c1c', totalProfit: -8000, virtualBalance: 192000, totalRounds: 16, winningRounds: 7 },
+  { userId: 'bot_ibadan_bull', username: 'IbadanBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=IbadanBull&backgroundColor=c2410c', totalProfit: -14000, virtualBalance: 186000, totalRounds: 15, winningRounds: 5 },
+  { userId: 'bot_asaba_trader', username: 'AsabaTrader', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=AsabaTrader&backgroundColor=0f766e', totalProfit: -22000, virtualBalance: 178000, totalRounds: 18, winningRounds: 6 },
+  { userId: 'bot_jos_hedger', username: 'JosHedger', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=JosHedger&backgroundColor=4338ca', totalProfit: -31000, virtualBalance: 169000, totalRounds: 19, winningRounds: 5 },
+  { userId: 'bot_kaduna_bull', username: 'KadunaBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=KadunaBull&backgroundColor=701a75', totalProfit: -42000, virtualBalance: 158000, totalRounds: 22, winningRounds: 6 },
+  { userId: 'bot_owerri_alpha', username: 'OwerriAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=OwerriAlpha&backgroundColor=831843', totalProfit: -55000, virtualBalance: 145000, totalRounds: 24, winningRounds: 5 },
 ];
 
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -488,7 +496,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(timer);
   }, [currentRound, userCurrentParticipations, notifications]);
 
-  // Organic simulated background bets for dynamic orderbook on Vercel & Standalone
+  // Organic simulated background bets for dynamic orderbook on Vercel & Standalone (FAST: 1000ms)
   useEffect(() => {
     const botInterval = setInterval(() => {
       if (isServerAvailable.current) return;
@@ -496,17 +504,38 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!round || round.status !== 'active') return;
 
       const remainingSecs = Math.max(0, Math.floor((round.endTime - Date.now()) / 1000));
-      if (remainingSecs <= 4) return; // Freeze bets in final 4 seconds before resolution
+      if (remainingSecs <= 3) return; // Freeze bets in final 3 seconds before resolution
 
-      const randomBot = BOT_TRADERS[Math.floor(Math.random() * BOT_TRADERS.length)];
-      const randomOption: MarketOption = Math.random() > 0.48 ? 'YES' : 'NO';
-      const stakeAmounts = [1000, 2500, 5000, 10000, 15000, 25000];
-      const botStake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
+      // Fast activity: 1-2 bot stakes every 1.0 second
+      const count = Math.random() > 0.35 ? 2 : 1;
       const now = Date.now();
 
+      let addedYes = 0;
+      let addedNo = 0;
+      const newFeedItems: LiveActivityFeedItem[] = [];
+
+      for (let i = 0; i < count; i++) {
+        const randomBot = BOT_TRADERS[Math.floor(Math.random() * BOT_TRADERS.length)];
+        const randomOption: MarketOption = Math.random() > 0.48 ? 'YES' : 'NO';
+        const stakeAmounts = [1000, 2500, 5000, 10000, 15000, 25000];
+        const botStake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
+
+        if (randomOption === 'YES') addedYes += botStake;
+        else addedNo += botStake;
+
+        newFeedItems.unshift({
+          id: `feed-bot-${now}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+          username: randomBot.username,
+          avatar: randomBot.avatar,
+          option: randomOption,
+          stake: botStake,
+          timestamp: now,
+        });
+      }
+
       setCurrentRound(prev => {
-        const yesTotal = randomOption === 'YES' ? prev.yesTotal + botStake : prev.yesTotal;
-        const noTotal = randomOption === 'NO' ? prev.noTotal + botStake : prev.noTotal;
+        const yesTotal = prev.yesTotal + addedYes;
+        const noTotal = prev.noTotal + addedNo;
         return {
           ...prev,
           yesTotal,
@@ -515,18 +544,8 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         };
       });
 
-      setLiveFeed(prev => [
-        {
-          id: `feed-bot-${now}-${Math.random().toString(36).substring(2, 6)}`,
-          username: randomBot.username,
-          avatar: randomBot.avatar,
-          option: randomOption,
-          stake: botStake,
-          timestamp: now,
-        },
-        ...prev.slice(0, 19),
-      ]);
-    }, 2200);
+      setLiveFeed(prev => [...newFeedItems, ...prev.slice(0, 19)]);
+    }, 1000);
 
     return () => clearInterval(botInterval);
   }, []);
@@ -752,48 +771,25 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const getLeaderboard = (_timeframe: LeaderboardTimeframe): LeaderboardEntry[] => {
     if (leaderboard.length > 0) return leaderboard;
 
-    const baseBots: LeaderboardEntry[] = [
-      {
-        rank: 1,
-        userId: 'bot_whale_delta',
-        username: 'WhaleDelta',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
-        virtualBalance: 320000,
-        totalProfit: 120000,
-        winningRounds: 24,
-        totalRounds: 38,
-        winRate: 63,
-        isCurrentUser: false,
-      },
-      {
-        rank: 2,
-        userId: 'bot_quant_alpha',
-        username: 'QuantAlpha',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
-        virtualBalance: 240000,
-        totalProfit: 75000,
-        winningRounds: 21,
-        totalRounds: 32,
-        winRate: 65,
-        isCurrentUser: false,
-      },
-      {
-        rank: 3,
-        userId: 'bot_lagos_trader',
-        username: 'LagosTrader',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554',
-        virtualBalance: 185000,
-        totalProfit: 55000,
-        winningRounds: 18,
-        totalRounds: 28,
-        winRate: 64,
-        isCurrentUser: false,
-      },
-    ];
-
     const entriesMap = new Map<string, LeaderboardEntry>();
-    baseBots.forEach(b => entriesMap.set(b.userId, b));
 
+    // Faithfully populate all 20 participant bots
+    BOT_TRADERS.forEach(b => {
+      entriesMap.set(b.userId, {
+        rank: 0,
+        userId: b.userId,
+        username: b.username,
+        avatar: b.avatar,
+        virtualBalance: b.virtualBalance,
+        totalProfit: b.totalProfit,
+        winningRounds: b.winningRounds,
+        totalRounds: b.totalRounds,
+        winRate: Math.round((b.winningRounds / b.totalRounds) * 100),
+        isCurrentUser: false,
+      });
+    });
+
+    // Add current player's live performance
     entriesMap.set(currentUser.userId, {
       rank: 0,
       userId: currentUser.userId,
@@ -807,6 +803,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isCurrentUser: true,
     });
 
+    // Add any peer players
     allUsers.forEach(u => {
       if (u.userId !== currentUser.userId && !entriesMap.has(u.userId)) {
         entriesMap.set(u.userId, {

@@ -120,8 +120,8 @@ class MarketEngine {
     // Authoritative 1-second interval loop
     setInterval(() => this.tick(), 1000);
 
-    // Organic bot bets to keep gameplay dynamic & lively
-    setInterval(() => this.simulateBotBet(), 2000);
+    // Organic bot bets to keep gameplay dynamic & lively (FAST: 1000ms)
+    setInterval(() => this.simulateBotBet(), 1000);
   }
 
   seedUsers() {
@@ -485,14 +485,17 @@ class MarketEngine {
     if (this.currentRound.status !== 'active') return;
     const now = Date.now();
     const remainingSecs = Math.max(0, Math.floor((this.currentRound.endTime - now) / 1000));
-    if (remainingSecs <= 5) return; // Freeze bets in final 5 seconds
+    if (remainingSecs <= 3) return; // Freeze bets in final 3 seconds
 
-    if (Math.random() < 0.65) {
-      const bots = Array.from(this.users.values()).filter(u => u.isSimulated);
-      if (bots.length === 0) return;
+    const bots = Array.from(this.users.values()).filter(u => u.isSimulated);
+    if (bots.length === 0) return;
+
+    // Fast activity: 1-2 bot stakes per second
+    const count = Math.random() > 0.35 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
       const bot = bots[Math.floor(Math.random() * bots.length)];
       const side: 'YES' | 'NO' = Math.random() > 0.48 ? 'YES' : 'NO';
-      const stakeAmounts = [1000, 2500, 5000, 10000, 15000];
+      const stakeAmounts = [1000, 2500, 5000, 10000, 15000, 25000];
       const stake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
 
       if (bot.virtualBalance < stake) {
