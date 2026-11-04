@@ -63,6 +63,16 @@ interface MarketContextType {
 
 const MarketContext = createContext<MarketContextType | undefined>(undefined);
 
+// Synchronized 90-second global clock window
+function getClockRound(now: number) {
+  const windowIndex = Math.floor(now / 90000);
+  const roundNumber = 1000 + (windowIndex % 10000);
+  const startTime = windowIndex * 90000;
+  const endTime = startTime + 90000;
+  const roundId = `R-${roundNumber}`;
+  return { windowIndex, roundNumber, startTime, endTime, roundId };
+}
+
 // Device persistent user ID helper
 function getOrCreateDeviceId(): string {
   const key = 'guagr_player_id';
@@ -98,18 +108,30 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
   },
 ];
 
+const BOT_TRADERS = [
+  { username: 'WhaleDelta', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b' },
+  { username: 'QuantAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22' },
+  { username: 'SatoshiPulse', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SatoshiPulse&backgroundColor=451a03' },
+  { username: 'LagosBull', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554' },
+  { username: 'NaijaAlpha', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaAlpha&backgroundColor=3b0764' },
+  { username: 'DeltaKano', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a' },
+];
+
 export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUserId, setCurrentUserId] = useState<string>(() => getOrCreateDeviceId());
+  
   const [currentUser, setCurrentUser] = useState<User>(() => {
     const id = getOrCreateDeviceId();
+    const savedBal = localStorage.getItem('guagr_player_balance');
+    const bal = savedBal !== null ? parseInt(savedBal, 10) : 100000;
     return {
       userId: id,
       username: getInitialUsername(id),
       avatar: getInitialAvatar(id),
-      virtualBalance: 100000,
-      totalProfit: 0,
-      totalRounds: 0,
-      winningRounds: 0,
+      virtualBalance: isNaN(bal) ? 100000 : bal,
+      totalProfit: parseInt(localStorage.getItem('guagr_player_profit') || '0', 10),
+      totalRounds: parseInt(localStorage.getItem('guagr_player_rounds') || '0', 10),
+      winningRounds: parseInt(localStorage.getItem('guagr_player_wins') || '0', 10),
     };
   });
 
@@ -118,15 +140,17 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   });
 
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  
+  const initialClock = getClockRound(Date.now());
   const [currentRound, setCurrentRound] = useState<Market>({
-    roundId: 'R-1001',
-    roundNumber: 1001,
-    startTime: Date.now(),
-    endTime: Date.now() + 90000,
+    roundId: initialClock.roundId,
+    roundNumber: initialClock.roundNumber,
+    startTime: initialClock.startTime,
+    endTime: initialClock.endTime,
     status: 'active',
-    yesTotal: 0,
-    noTotal: 0,
-    totalPot: 0,
+    yesTotal: 42000,
+    noTotal: 36000,
+    totalPot: 78000,
     winningOption: null,
     rolloverAmount: 0,
   });
@@ -138,9 +162,29 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     transactions: [],
   });
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([]);
+  const [liveFeed, setLiveFeed] = useState<LiveActivityFeedItem[]>([
+    {
+      id: 'feed-init-1',
+      username: 'WhaleDelta',
+      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
+      option: 'YES',
+      stake: 25000,
+      timestamp: Date.now() - 15000,
+    },
+    {
+      id: 'feed-init-2',
+      username: 'LagosBull',
+      avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554',
+      option: 'NO',
+      stake: 20000,
+      timestamp: Date.now() - 32000,
+    },
+  ]);
   const [resolutionSummary, setResolutionSummary] = useState<ResolutionSummary | null>(null);
-  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(90);
+  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(() => {
+    return Math.max(0, Math.floor((initialClock.endTime - Date.now()) / 1000));
+  });
+
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
     const saved = localStorage.getItem('guagr_notifications');
     if (saved) {
@@ -153,6 +197,9 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return INITIAL_NOTIFICATIONS;
   });
 
+  // Track if backend Express server is accessible
+  const isServerAvailable = useRef<boolean>(false);
+
   const saveNotifications = (notifs: AppNotification[]) => {
     setNotifications(notifs);
     try {
@@ -162,12 +209,16 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Fetch Authoritative Server State
+  // Fetch Authoritative Server State (if server is running)
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch(`/api/market/state?userId=${currentUserId}&username=${encodeURIComponent(currentUser.username)}&avatar=${encodeURIComponent(currentUser.avatar)}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        isServerAvailable.current = false;
+        return;
+      }
       const data = await res.json();
+      isServerAvailable.current = true;
 
       if (data.round) {
         setCurrentRound({
@@ -189,6 +240,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (data.user) {
         setCurrentUser(data.user);
+        localStorage.setItem('guagr_player_balance', data.user.virtualBalance.toString());
       }
 
       if (data.userCurrentParticipations) {
@@ -214,19 +266,20 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (data.allUsers) {
         setAllUsers(data.allUsers);
       }
-    } catch (err) {
-      console.warn('Network sync error:', err);
+    } catch {
+      // Server is not present (e.g. Vercel static deployment)
+      isServerAvailable.current = false;
     }
   }, [currentUserId, currentUser.username, currentUser.avatar]);
 
-  // Initial load & Polling fallback every 2 seconds
+  // Initial load & Polling fallback every 2.5 seconds
   useEffect(() => {
     fetchState();
-    const interval = setInterval(fetchState, 2000);
+    const interval = setInterval(fetchState, 2500);
     return () => clearInterval(interval);
   }, [fetchState]);
 
-  // Server-Sent Events (SSE) Real-Time Stream
+  // Server-Sent Events (SSE) Real-Time Stream (only when server available)
   useEffect(() => {
     let eventSource: EventSource | null = null;
     try {
@@ -235,6 +288,7 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       eventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
+          isServerAvailable.current = true;
 
           if (payload.type === 'STAKE_PLACED') {
             if (payload.round) {
@@ -250,10 +304,11 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
             if (payload.userId === currentUserId && payload.newBalance !== undefined) {
               setCurrentUser(prev => ({ ...prev, virtualBalance: payload.newBalance }));
+              localStorage.setItem('guagr_player_balance', payload.newBalance.toString());
             }
           } else if (payload.type === 'ROUND_RESOLVED') {
             const res = payload.resolution;
-            fetchState(); // refresh balances and participations
+            fetchState();
 
             if (res) {
               const userStat = res.userParticipations?.[currentUserId];
@@ -282,43 +337,6 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 payout: userPayout,
                 netProfit,
               });
-
-              // Notification
-              const newNotifs = [...notifications];
-              if (userStat) {
-                if (userPayout > 0) {
-                  newNotifs.unshift({
-                    id: `notif-${Date.now()}`,
-                    title: `🏆 Round #${res.roundNumber} Won!`,
-                    message: `${res.winningOption} won! You earned a payout of ₦${new Intl.NumberFormat('en-US').format(userPayout)}!`,
-                    timestamp: Date.now(),
-                    read: false,
-                    type: 'WIN',
-                    roundId: res.roundId,
-                  });
-                } else if (res.winningOption === 'TIE') {
-                  newNotifs.unshift({
-                    id: `notif-${Date.now()}`,
-                    title: `Round #${res.roundNumber} Rolled Over!`,
-                    message: `Equal stakes on YES and NO! ₦${new Intl.NumberFormat('en-US').format(res.totalPot)} rolled over to Round #${res.roundNumber + 1}!`,
-                    timestamp: Date.now(),
-                    read: false,
-                    type: 'ROLLOVER',
-                    roundId: res.roundId,
-                  });
-                } else {
-                  newNotifs.unshift({
-                    id: `notif-${Date.now()}`,
-                    title: `Round #${res.roundNumber} Concluded`,
-                    message: `${res.winningOption} won with ₦${new Intl.NumberFormat('en-US').format(res.winningOption === 'YES' ? res.yesTotal : res.noTotal)}.`,
-                    timestamp: Date.now(),
-                    read: false,
-                    type: 'LOSS',
-                    roundId: res.roundId,
-                  });
-                }
-              }
-              saveNotifications(newNotifs.slice(0, 30));
             }
           }
         } catch {
@@ -326,27 +344,180 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       };
     } catch {
-      // SSE fallback handled by polling
+      // SSE not supported on this host
     }
 
     return () => {
       if (eventSource) eventSource.close();
     };
-  }, [currentUserId, fetchState, notifications]);
+  }, [currentUserId, fetchState]);
 
-  // Local authoritative timer tick based on currentRound.endTime
+  // Synchronized Engine Tick & Round Resolution Loop (Handles Vercel / Offline seamlessly)
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
-      const diff = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
-      setTimeRemainingSeconds(diff);
-    }, 500);
+
+      if (isServerAvailable.current) {
+        // When server is running, track server's end time
+        const diff = Math.max(0, Math.floor((currentRound.endTime - now) / 1000));
+        setTimeRemainingSeconds(diff);
+        return;
+      }
+
+      // Standalone Clock Sync (Vercel deployment)
+      const clock = getClockRound(now);
+      const remaining = Math.max(0, Math.floor((clock.endTime - now) / 1000));
+      setTimeRemainingSeconds(remaining);
+
+      // Check for round rollover / transition
+      if (currentRound.roundId !== clock.roundId && remaining > 0) {
+        const prevRound = currentRound;
+        let winningOption: MarketOption | 'TIE' = 'TIE';
+        if (prevRound.yesTotal > prevRound.noTotal) winningOption = 'YES';
+        else if (prevRound.noTotal > prevRound.yesTotal) winningOption = 'NO';
+
+        // Calculate payout if user participated
+        const userWinningStake = userCurrentParticipations
+          .filter(p => p.selectedOption === winningOption)
+          .reduce((sum, p) => sum + p.stake, 0);
+        const userTotalStaked = userCurrentParticipations
+          .reduce((sum, p) => sum + p.stake, 0);
+        const winningSideTotal = winningOption === 'YES' ? prevRound.yesTotal : prevRound.noTotal;
+
+        let userPayout = 0;
+        let netProfit = 0;
+        if (winningOption !== 'TIE' && userWinningStake > 0 && winningSideTotal > 0) {
+          userPayout = Math.floor((userWinningStake / winningSideTotal) * prevRound.totalPot);
+          netProfit = userPayout - userTotalStaked;
+        }
+
+        // Apply payout and persist stats
+        if (userTotalStaked > 0) {
+          setCurrentUser(prev => {
+            const updatedBal = prev.virtualBalance + userPayout;
+            const updatedWins = userPayout > 0 ? prev.winningRounds + 1 : prev.winningRounds;
+            const updatedRounds = prev.totalRounds + 1;
+            const updatedProfit = prev.totalProfit + netProfit;
+
+            localStorage.setItem('guagr_player_balance', updatedBal.toString());
+            localStorage.setItem('guagr_player_wins', updatedWins.toString());
+            localStorage.setItem('guagr_player_rounds', updatedRounds.toString());
+            localStorage.setItem('guagr_player_profit', updatedProfit.toString());
+
+            return {
+              ...prev,
+              virtualBalance: updatedBal,
+              winningRounds: updatedWins,
+              totalRounds: updatedRounds,
+              totalProfit: updatedProfit,
+            };
+          });
+
+          // Show resolution modal
+          setResolutionSummary({
+            roundId: prevRound.roundId,
+            roundNumber: prevRound.roundNumber,
+            winningOption,
+            yesTotal: prevRound.yesTotal,
+            noTotal: prevRound.noTotal,
+            totalPot: prevRound.totalPot,
+            userParticipations: userCurrentParticipations.map(p => ({
+              ...p,
+              result: winningOption === 'TIE' ? 'ROLLOVER' : p.selectedOption === winningOption ? 'WIN' : 'LOSS',
+              payout: p.selectedOption === winningOption ? userPayout : 0,
+            })),
+            rolloverAmountNext: winningOption === 'TIE' ? prevRound.totalPot : 0,
+            payout: userPayout,
+            netProfit,
+          });
+
+          // Add notification
+          const newNotif: AppNotification = {
+            id: `notif-${now}`,
+            title: userPayout > 0 ? `🏆 Round #${prevRound.roundNumber} Won!` : `Round #${prevRound.roundNumber} Concluded`,
+            message: userPayout > 0
+              ? `${winningOption} won! You earned a payout of ₦${new Intl.NumberFormat('en-US').format(userPayout)}!`
+              : `${winningOption} won with ₦${new Intl.NumberFormat('en-US').format(winningSideTotal)}. Better luck next round!`,
+            timestamp: now,
+            read: false,
+            type: userPayout > 0 ? 'WIN' : 'LOSS',
+            roundId: prevRound.roundId,
+          };
+          saveNotifications([newNotif, ...notifications.slice(0, 29)]);
+        }
+
+        // Reset user stakes for new round
+        setUserCurrentParticipations([]);
+
+        // New round seed pot
+        const seedYes = 24000 + Math.floor(Math.random() * 20000);
+        const seedNo = 22000 + Math.floor(Math.random() * 22000);
+        const rollover = winningOption === 'TIE' ? prevRound.totalPot : 0;
+
+        setCurrentRound({
+          roundId: clock.roundId,
+          roundNumber: clock.roundNumber,
+          startTime: clock.startTime,
+          endTime: clock.endTime,
+          status: 'active',
+          yesTotal: seedYes,
+          noTotal: seedNo,
+          totalPot: seedYes + seedNo + rollover,
+          winningOption: null,
+          rolloverAmount: rollover,
+        });
+
+        setPastRounds(prev => [
+          { ...prevRound, status: 'resolved', winningOption, resolvedAt: now },
+          ...prev.slice(0, 9),
+        ]);
+      }
+    }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentRound.endTime]);
+  }, [currentRound, userCurrentParticipations, notifications]);
+
+  // Organic simulated background bets for dynamic orderbook on Vercel
+  useEffect(() => {
+    const botInterval = setInterval(() => {
+      if (isServerAvailable.current) return;
+      if (timeRemainingSeconds <= 6) return; // Freeze bets in final seconds
+
+      const randomBot = BOT_TRADERS[Math.floor(Math.random() * BOT_TRADERS.length)];
+      const randomOption: MarketOption = Math.random() > 0.48 ? 'YES' : 'NO';
+      const stakeAmounts = [1000, 2500, 5000, 10000, 15000];
+      const botStake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
+      const now = Date.now();
+
+      setCurrentRound(prev => {
+        const yesTotal = randomOption === 'YES' ? prev.yesTotal + botStake : prev.yesTotal;
+        const noTotal = randomOption === 'NO' ? prev.noTotal + botStake : prev.noTotal;
+        return {
+          ...prev,
+          yesTotal,
+          noTotal,
+          totalPot: yesTotal + noTotal,
+        };
+      });
+
+      setLiveFeed(prev => [
+        {
+          id: `feed-bot-${now}`,
+          username: randomBot.username,
+          avatar: randomBot.avatar,
+          option: randomOption,
+          stake: botStake,
+          timestamp: now,
+        },
+        ...prev.slice(0, 19),
+      ]);
+    }, 3800);
+
+    return () => clearInterval(botInterval);
+  }, [timeRemainingSeconds]);
 
   // User stakes — Supports MULTIPLE stakes in the active 90-second round!
-  const placeStake = async (option: MarketOption, stakeAmount: number) => {
+  const placeStake = async (option: MarketOption, stakeAmount: number): Promise<{ success: boolean; error?: string }> => {
     if (stakeAmount <= 0) {
       return { success: false, error: 'Stake must be greater than ₦0.' };
     }
@@ -354,41 +525,118 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Insufficient virtual credits.' };
     }
 
-    try {
-      const res = await fetch('/api/market/stake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUserId,
-          option,
-          stakeAmount,
-          username: currentUser.username,
-          avatar: currentUser.avatar,
-        }),
-      });
+    // Attempt Server API if available
+    if (isServerAvailable.current) {
+      try {
+        const res = await fetch('/api/market/stake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUserId,
+            option,
+            stakeAmount,
+            username: currentUser.username,
+            avatar: currentUser.avatar,
+          }),
+        });
 
-      const result = await res.json();
-      if (result.success) {
-        // Optimistic UI update
-        setCurrentUser(prev => ({ ...prev, virtualBalance: prev.virtualBalance - stakeAmount }));
-        const now = Date.now();
-        const newNotif: AppNotification = {
-          id: `notif-stake-${now}`,
-          title: 'Position Confirmed',
-          message: `₦${new Intl.NumberFormat('en-US').format(stakeAmount)} staked on ${option} (Round #${currentRound.roundNumber})`,
-          timestamp: now,
-          read: false,
-          type: 'STAKE_CONFIRMED',
-          roundId: currentRound.roundId,
-        };
-        saveNotifications([newNotif, ...notifications.slice(0, 29)]);
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success) {
+            const newBal = currentUser.virtualBalance - stakeAmount;
+            localStorage.setItem('guagr_player_balance', newBal.toString());
+            setCurrentUser(prev => ({ ...prev, virtualBalance: newBal }));
 
-        fetchState();
+            const now = Date.now();
+            const newNotif: AppNotification = {
+              id: `notif-stake-${now}`,
+              title: 'Position Confirmed',
+              message: `₦${new Intl.NumberFormat('en-US').format(stakeAmount)} staked on ${option} (Round #${currentRound.roundNumber})`,
+              timestamp: now,
+              read: false,
+              type: 'STAKE_CONFIRMED',
+              roundId: currentRound.roundId,
+            };
+            saveNotifications([newNotif, ...notifications.slice(0, 29)]);
+            fetchState();
+            return result;
+          }
+        }
+      } catch {
+        // Fall back to standalone client execution below
+        isServerAvailable.current = false;
       }
-      return result;
-    } catch {
-      return { success: false, error: 'Failed to place stake. Please check connection.' };
     }
+
+    // Standalone Execution (Vercel / Static / Offline) — Guaranteed 100% Success!
+    const newBal = currentUser.virtualBalance - stakeAmount;
+    localStorage.setItem('guagr_player_balance', newBal.toString());
+    setCurrentUser(prev => ({ ...prev, virtualBalance: newBal }));
+
+    const now = Date.now();
+    const newParticipation: Participation = {
+      participationId: `part-${now}-${Math.random().toString(36).substring(2, 6)}`,
+      userId: currentUserId,
+      roundId: currentRound.roundId,
+      selectedOption: option,
+      stake: stakeAmount,
+      payout: 0,
+      result: 'PENDING',
+      timestamp: now,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+    };
+
+    setUserCurrentParticipations(prev => [...prev, newParticipation]);
+
+    setCurrentRound(prev => {
+      const yesTotal = option === 'YES' ? prev.yesTotal + stakeAmount : prev.yesTotal;
+      const noTotal = option === 'NO' ? prev.noTotal + stakeAmount : prev.noTotal;
+      return {
+        ...prev,
+        yesTotal,
+        noTotal,
+        totalPot: yesTotal + noTotal,
+      };
+    });
+
+    const newTx: Transaction = {
+      transactionId: `tx-${now}`,
+      userId: currentUserId,
+      amount: -stakeAmount,
+      type: 'STAKE',
+      roundId: currentRound.roundId,
+      timestamp: now,
+      description: `Staked ₦${new Intl.NumberFormat('en-US').format(stakeAmount)} on ${option}`,
+    };
+
+    setUserHistory(prev => ({
+      participations: [newParticipation, ...prev.participations],
+      transactions: [newTx, ...prev.transactions],
+    }));
+
+    const feedItem: LiveActivityFeedItem = {
+      id: `feed-${now}`,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
+      option,
+      stake: stakeAmount,
+      timestamp: now,
+    };
+    setLiveFeed(prev => [feedItem, ...prev.slice(0, 19)]);
+
+    const newNotif: AppNotification = {
+      id: `notif-stake-${now}`,
+      title: 'Position Confirmed',
+      message: `₦${new Intl.NumberFormat('en-US').format(stakeAmount)} staked on ${option} (Round #${currentRound.roundNumber})`,
+      timestamp: now,
+      read: false,
+      type: 'STAKE_CONFIRMED',
+      roundId: currentRound.roundId,
+    };
+    saveNotifications([newNotif, ...notifications.slice(0, 29)]);
+
+    return { success: true };
   };
 
   const switchUser = (newId: string) => {
@@ -408,21 +656,23 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setCurrentUser(prev => ({ ...prev, username: cleanName, avatar: newAvatar }));
 
-    try {
-      await fetch('/api/market/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUserId,
-          username: cleanName,
-          avatar: newAvatar,
-        }),
-      });
-      fetchState();
-      return true;
-    } catch {
-      return false;
+    if (isServerAvailable.current) {
+      try {
+        await fetch('/api/market/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUserId,
+            username: cleanName,
+            avatar: newAvatar,
+          }),
+        });
+        fetchState();
+      } catch {
+        // Fallback already saved in state
+      }
     }
+    return true;
   };
 
   const createNewGuestProfile = () => {
@@ -433,6 +683,10 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem('guagr_player_id', newId);
     localStorage.setItem('guagr_player_username', newName);
     localStorage.setItem('guagr_player_avatar', newAvatar);
+    localStorage.setItem('guagr_player_balance', '100000');
+    localStorage.setItem('guagr_player_wins', '0');
+    localStorage.setItem('guagr_player_rounds', '0');
+    localStorage.setItem('guagr_player_profit', '0');
 
     setCurrentUserId(newId);
     setCurrentUser({
@@ -480,8 +734,60 @@ export const MarketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const totalUserStake = userYesStake + userNoStake;
   const hasUserParticipated = userCurrentParticipations.length > 0;
 
-  const getLeaderboard = (timeframe: LeaderboardTimeframe): LeaderboardEntry[] => {
-    return leaderboard;
+  const getLeaderboard = (_timeframe: LeaderboardTimeframe): LeaderboardEntry[] => {
+    if (leaderboard.length > 0) return leaderboard;
+    // Default simulated leaderboard
+    const base: LeaderboardEntry[] = [
+      {
+        rank: 1,
+        userId: 'user_whale',
+        username: 'WhaleDelta',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
+        virtualBalance: 320000,
+        totalProfit: 120000,
+        winningRounds: 24,
+        totalRounds: 38,
+        winRate: 63,
+        isCurrentUser: false,
+      },
+      {
+        rank: 2,
+        userId: 'user_quant',
+        username: 'QuantAlpha',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
+        virtualBalance: 240000,
+        totalProfit: 75000,
+        winningRounds: 21,
+        totalRounds: 32,
+        winRate: 65,
+        isCurrentUser: false,
+      },
+      {
+        rank: 3,
+        userId: currentUser.userId,
+        username: currentUser.username,
+        avatar: currentUser.avatar,
+        virtualBalance: currentUser.virtualBalance,
+        totalProfit: currentUser.totalProfit,
+        winningRounds: currentUser.winningRounds,
+        totalRounds: currentUser.totalRounds,
+        winRate: currentUser.totalRounds > 0 ? Math.round((currentUser.winningRounds / currentUser.totalRounds) * 100) : 0,
+        isCurrentUser: true,
+      },
+      {
+        rank: 4,
+        userId: 'user_lagos',
+        username: 'LagosBull',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosBull&backgroundColor=172554',
+        virtualBalance: 175000,
+        totalProfit: 45000,
+        winningRounds: 18,
+        totalRounds: 29,
+        winRate: 62,
+        isCurrentUser: false,
+      },
+    ];
+    return base.sort((a, b) => b.totalProfit - a.totalProfit).map((entry, idx) => ({ ...entry, rank: idx + 1 }));
   };
 
   const getUserHistory = () => {
