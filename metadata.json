@@ -1,0 +1,6 @@
+{
+  "name": "guagr - 5-Min Recurring Prediction Market",
+  "description": "guagr is a mobile prediction market application centred around a recurring five-minute market with blind commitments and proportional pool resolutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
