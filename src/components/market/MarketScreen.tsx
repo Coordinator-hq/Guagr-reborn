@@ -69,14 +69,22 @@ export const MarketScreen: React.FC = () => {
   const yesPercent = totalWagered > 0 ? Math.round((yesTotal / totalWagered) * 100) : 50;
   const noPercent = totalWagered > 0 ? 100 - yesPercent : 50;
 
-  // Potential payout calculation if side wins
-  const calculatePotentialPayout = (side: MarketOption, stake: number) => {
-    const sideTotal = (side === 'YES' ? yesTotal : noTotal) + stake;
-    const prospectivePot = totalPot + stake;
-    const distributable = prospectivePot * 0.90;
-    if (sideTotal <= 0) return stake * 1.8;
-    return Math.round((stake / sideTotal) * distributable);
+  // Calculate user's estimated payout.
+  // CRITICAL: If the user's chosen side is losing, no estimated payout is shown!
+  const getUserEstPayout = () => {
+    let totalEst = 0;
+    // If user staked YES and YES is currently winning
+    if (userYesStake > 0 && yesTotal > noTotal && yesTotal > 0) {
+      totalEst += Math.round((userYesStake / yesTotal) * (totalPot * 0.90));
+    }
+    // If user staked NO and NO is currently winning
+    if (userNoStake > 0 && noTotal > yesTotal && noTotal > 0) {
+      totalEst += Math.round((userNoStake / noTotal) * (totalPot * 0.90));
+    }
+    return totalEst;
   };
+
+  const estPayoutAmount = getUserEstPayout();
 
   const handleCustomInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^0-9]/g, '');
@@ -272,15 +280,16 @@ export const MarketScreen: React.FC = () => {
               </div>
 
               <div className="text-right">
-                <div className="text-[11px] text-slate-400">Est. Payout</div>
-                <div className="font-mono text-sm font-bold text-emerald-600">
-                  ~₦{formatCredits(
-                    calculatePotentialPayout(
-                      userYesStake >= userNoStake ? 'YES' : 'NO',
-                      Math.max(userYesStake, userNoStake)
-                    )
-                  )}
-                </div>
+                <div className="text-[11px] font-semibold text-slate-400">Est. Payout</div>
+                {estPayoutAmount > 0 ? (
+                  <div className="font-mono text-sm font-bold text-emerald-600">
+                    ~₦{formatCredits(estPayoutAmount)}
+                  </div>
+                ) : (
+                  <div className="font-mono text-sm font-bold text-slate-400">
+                    ₦0
+                  </div>
+                )}
               </div>
             </div>
 
@@ -315,7 +324,7 @@ export const MarketScreen: React.FC = () => {
           </div>
         )}
 
-        {/* STAKE CONTROLS: POSITIONED ABOVE RECENT LIVE TRADES */}
+        {/* STAKE CONTROLS: POSITIONED ABOVE RECENT LIVE STAKES */}
         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
           {!hasUserParticipated ? (
             <div className="flex items-center gap-2 text-xs text-slate-500 mb-2.5">
@@ -409,11 +418,11 @@ export const MarketScreen: React.FC = () => {
           )}
         </div>
 
-        {/* RECENT LIVE TRADES: POSITIONED BELOW STAKE CONTROLS */}
+        {/* RECENT LIVE STAKES: POSITIONED BELOW STAKE CONTROLS */}
         {hasUserParticipated && (
           <div className="mt-4 rounded-xl border border-blue-100 bg-[#f7faff] p-3.5">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
-              <span>Recent Live Trades</span>
+              <span>Recent Live Stakes</span>
               <span className="text-[#0062ff] font-mono">Live Feed ●</span>
             </div>
             <div className="space-y-1 max-h-24 overflow-y-auto">

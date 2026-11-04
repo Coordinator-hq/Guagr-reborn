@@ -99,6 +99,7 @@ class MarketEngine {
   sseClients: Set<express.Response> = new Set();
 
   constructor() {
+    this.seedUsers();
     const now = Date.now();
     this.currentRound = {
       roundId: 'R-1001',
@@ -118,6 +119,75 @@ class MarketEngine {
 
     // Authoritative 1-second interval loop
     setInterval(() => this.tick(), 1000);
+
+    // Organic bot bets to keep gameplay dynamic & lively
+    setInterval(() => this.simulateBotBet(), 2800);
+  }
+
+  seedUsers() {
+    const bots: UserState[] = [
+      {
+        userId: 'bot_whale_delta',
+        username: 'WhaleDelta',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=WhaleDelta&backgroundColor=1e293b',
+        virtualBalance: 320000,
+        totalProfit: 120000,
+        totalRounds: 38,
+        winningRounds: 24,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_quant_alpha',
+        username: 'QuantAlpha',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=QuantAlpha&backgroundColor=022c22',
+        virtualBalance: 240000,
+        totalProfit: 75000,
+        totalRounds: 32,
+        winningRounds: 21,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_lagos_trader',
+        username: 'LagosTrader',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=LagosTrader&backgroundColor=172554',
+        virtualBalance: 185000,
+        totalProfit: 55000,
+        totalRounds: 28,
+        winningRounds: 18,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_satoshi_pulse',
+        username: 'SatoshiPulse',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=SatoshiPulse&backgroundColor=451a03',
+        virtualBalance: 165000,
+        totalProfit: 35000,
+        totalRounds: 26,
+        winningRounds: 15,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_naija_bull',
+        username: 'NaijaBull',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=NaijaBull&backgroundColor=3b0764',
+        virtualBalance: 140000,
+        totalProfit: 20000,
+        totalRounds: 22,
+        winningRounds: 13,
+        isSimulated: true,
+      },
+      {
+        userId: 'bot_kano_delta',
+        username: 'DeltaKano',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DeltaKano&backgroundColor=134e4a',
+        virtualBalance: 110000,
+        totalProfit: 8000,
+        totalRounds: 18,
+        winningRounds: 10,
+        isSimulated: true,
+      },
+    ];
+    bots.forEach(b => this.users.set(b.userId, b));
   }
 
   getOrCreateUser(userId: string, username?: string, avatar?: string): UserState {
@@ -349,6 +419,27 @@ class MarketEngine {
     });
 
     return { success: true };
+  }
+
+  simulateBotBet() {
+    if (this.currentRound.status !== 'active') return;
+    const now = Date.now();
+    const remainingSecs = Math.max(0, Math.floor((this.currentRound.endTime - now) / 1000));
+    if (remainingSecs <= 5) return; // Freeze bets in final 5 seconds
+
+    if (Math.random() < 0.65) {
+      const bots = Array.from(this.users.values()).filter(u => u.isSimulated);
+      if (bots.length === 0) return;
+      const bot = bots[Math.floor(Math.random() * bots.length)];
+      const side: 'YES' | 'NO' = Math.random() > 0.48 ? 'YES' : 'NO';
+      const stakeAmounts = [1000, 2500, 5000, 10000, 15000];
+      const stake = stakeAmounts[Math.floor(Math.random() * stakeAmounts.length)];
+
+      if (bot.virtualBalance < stake) {
+        bot.virtualBalance += 50000;
+      }
+      this.placeStake(bot.userId, side, stake);
+    }
   }
 
   getPublicRoundData() {
